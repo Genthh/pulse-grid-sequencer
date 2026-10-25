@@ -8,25 +8,24 @@
       content="Build a one-bar drum loop with four synthesized voices and sixteen editable steps."
     />
     <title>Pulse Grid — Drum sequencer</title>
+    <link rel="stylesheet" href="fonts/type.css" />
     <link rel="stylesheet" href="style.css" />
     <script src="model.js" defer></script>
     <script src="app.js" defer></script>
   </head>
   <body>
     <main>
-      <header>
-        <span class="meter" aria-hidden="true"
-          ><i></i><i></i><i></i><i></i><i></i
-        ></span>
-        <h1>Pulse Grid</h1>
-        <p>
-          A four-voice drum sequencer. Tap the pads to build a one-bar loop.
-        </p>
-      </header>
       <section class="instrument" aria-label="Drum machine">
+        <header class="faceplate">
+          <div>
+            <h1>Pulse Grid</h1>
+            <p>Four-voice drum sequencer</p>
+          </div>
+          <span class="vent" aria-hidden="true"></span>
+        </header>
         <div class="controls">
           <div class="transport">
-            <span class="label">Transport</span>
+            <p id="status" role="status">Stopped</p>
             <button type="button" id="play">
               <span aria-hidden="true" class="play-icon"></span
               ><span id="play-text">Play</span>
@@ -55,14 +54,17 @@
           </div>
         </div>
         <div class="grid-wrap">
-          <h2>Step editor</h2>
+          <div class="editor-head">
+            <h2>Step editor</h2>
+            <span class="grid-hatch" aria-hidden="true"></span>
+          </div>
           <p class="directions">
-            Each pad is a sixteenth note. Use arrow keys to move between pads.
+            Tap a pad to add a sixteenth note. Use arrow keys to move between
+            pads.
           </p>
           <div id="grid"></div>
         </div>
         <footer>
-          <p id="status" role="status">Stopped</p>
           <button type="button" id="clear">Clear pattern</button>
         </footer>
       </section>
