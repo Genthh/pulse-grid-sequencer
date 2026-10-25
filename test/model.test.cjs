@@ -39,3 +39,37 @@ test("a bar is four beats at the selected tempo", () => {
     assert.throws(() => stepDuration(invalid), RangeError);
   }
 });
+
+const { encodeLoop, decodeLoop, presetFor } = require("../public/model.js");
+
+test("portable codes round-trip all four tracks and the tempo", () => {
+  for (const bpm of [50, 112, 190]) {
+    let pattern = makePattern("empty");
+    for (let step = 0; step < 16; step++)
+      pattern = toggle(pattern, step % 4, step);
+    const encoded = encodeLoop(pattern, bpm);
+    assert.deepEqual(decodeLoop(encoded), { pattern, bpm });
+    assert.equal(presetFor(pattern), "custom");
+  }
+  assert.equal(encodeLoop(makePattern("empty"), 50), "v1.50.0000000000000000");
+  assert.equal(presetFor(makePattern("drive")), "drive");
+});
+
+test("share and draft parsing reject malformed payloads and out-of-range tempos", () => {
+  for (const bad of [
+    null,
+    "v1.191.0000000000000000",
+    "v1.049.0000000000000000",
+    "v2.100.0000000000000000",
+    "v1.120.0000",
+    "v1.120.123456789ABCDEFG",
+    "v1.120.0000000000000000extra",
+  ]) {
+    assert.equal(decodeLoop(bad), null);
+  }
+  assert.throws(() => encodeLoop(makePattern("pocket"), 90.5));
+  assert.throws(() => encodeLoop([[false]], 90));
+  const invalid = makePattern("pocket");
+  invalid[1][3] = "on";
+  assert.throws(() => encodeLoop(invalid, 100));
+});

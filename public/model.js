@@ -56,7 +56,61 @@ const PulseGrid = (() => {
     return 60 / bpm / 4;
   }
 
-  return { tracks, steps, makePattern, toggle, stepDuration };
+  function encodeLoop(pattern, bpm) {
+    if (!Number.isInteger(bpm))
+      throw new RangeError("Choose a whole-number tempo.");
+    stepDuration(bpm);
+    if (!Array.isArray(pattern) || pattern.length !== tracks.length)
+      throw new RangeError("Expected four tracks.");
+    const words = Array.from(pattern, (row) => {
+      if (
+        !Array.isArray(row) ||
+        row.length !== steps ||
+        !Array.from(row).every((on) => typeof on === "boolean")
+      )
+        throw new RangeError("Expected sixteen pads per track.");
+      return row
+        .reduce((mask, on) => mask * 2 + Number(on), 0)
+        .toString(16)
+        .padStart(4, "0");
+    });
+    return "v1." + bpm + "." + words.join("");
+  }
+
+  function decodeLoop(code) {
+    if (typeof code !== "string" || code.length > 24) return null;
+    const match = /^v1\.([1-9]\d{1,2})\.([a-f0-9]{16})$/i.exec(code);
+    if (!match) return null;
+    const bpm = Number(match[1]);
+    if (bpm < 50 || bpm > 190) return null;
+    const pattern = match[2].match(/.{4}/g).map((word) => {
+      const mask = parseInt(word, 16);
+      return Array.from({ length: steps }, (_, i) =>
+        Boolean(mask & (1 << (steps - i - 1))),
+      );
+    });
+    return { bpm, pattern };
+  }
+
+  function presetFor(pattern) {
+    const signature = encodeLoop(pattern, 120);
+    return (
+      ["pocket", "drive", "breaks"].find(
+        (name) => encodeLoop(makePattern(name), 120) === signature,
+      ) || "custom"
+    );
+  }
+
+  return {
+    tracks,
+    steps,
+    makePattern,
+    toggle,
+    stepDuration,
+    encodeLoop,
+    decodeLoop,
+    presetFor,
+  };
 })();
 if (typeof module !== "undefined") module.exports = PulseGrid;
 else globalThis.PulseGridModel = PulseGrid;
