@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="fonts/type.css" />
     <link rel="stylesheet" href="style.css" />
     <script src="model.js" defer></script>
+    <script src="loops.js" defer></script>
     <script src="app.js" defer></script>
   </head>
   <body>
@@ -65,8 +66,28 @@
           <div id="grid"></div>
         </div>
         <footer>
+          <button
+            type="button"
+            id="share-loop"
+            aria-controls="link-panel"
+            aria-expanded="false"
+          >
+            Share loop
+          </button>
           <button type="button" id="clear">Clear pattern</button>
         </footer>
+        <div id="link-panel" hidden>
+          <label for="share-url">Loop link</label>
+          <div class="link-controls">
+            <input id="share-url" readonly type="text" /><button
+              type="button"
+              id="copy-loop"
+            >
+              Copy link
+            </button>
+          </div>
+        </div>
+        <p id="loop-notice" role="status">Edits are saved in this browser.</p>
       </section>
     </main>
   </body>

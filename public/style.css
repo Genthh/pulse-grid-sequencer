@@ -400,3 +400,53 @@ footer {
     padding: 11px;
   }
 }
+footer {
+  justify-content: space-between;
+  gap: 10px;
+}
+#share-loop,
+#copy-loop {
+  border: 1px solid #929387;
+  color: var(--ink);
+  background: #353731;
+  border-radius: 4px;
+  min-height: 40px;
+  padding: 7px 13px;
+  font-size: 0.82rem;
+}
+#share-loop {
+  border-color: var(--warm);
+  color: #ffc297;
+}
+#share-loop:hover,
+#copy-loop:hover {
+  background: #464941;
+}
+#link-panel {
+  margin-top: 15px;
+  padding: 14px;
+  background: #21231f;
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+}
+.link-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+#share-url {
+  min-width: 0;
+  flex: 1 1 180px;
+  border: 1px solid #929387;
+  background: #141615;
+  color: var(--ink);
+  padding: 6px 8px;
+}
+#loop-notice {
+  margin-top: 12px;
+  color: var(--dim);
+  font:
+    0.82rem/1.4 "Helvetica Neue",
+    Arial,
+    sans-serif;
+}

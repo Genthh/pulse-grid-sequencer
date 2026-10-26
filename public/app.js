@@ -20,6 +20,7 @@
   let playing = false;
   let session = 0;
   let pending = [];
+  let persistence;
 
   function renderPattern() {
     for (const [track, row] of rows.entries()) {
@@ -102,6 +103,7 @@
     );
     preset.value = "custom";
     renderPattern();
+    persistence.changed();
   });
 
   function playVoice(track, time) {
@@ -117,9 +119,10 @@
     const source = noisy
       ? audio.createBufferSource()
       : audio.createOscillator();
+    let filter;
     if (noisy) {
       source.buffer = noise;
-      const filter = audio.createBiquadFilter();
+      filter = audio.createBiquadFilter();
       filter.type = "highpass";
       filter.frequency.value = track === 1 ? 1200 : 5700;
       source.connect(filter);
@@ -133,6 +136,11 @@
       );
       source.connect(envelope);
     }
+    source.onended = () => {
+      source.disconnect();
+      filter?.disconnect();
+      envelope.disconnect();
+    };
     source.start(time);
     source.stop(end);
   }
@@ -171,6 +179,7 @@
     cancelAnimationFrame(frame);
     if (bus) bus.disconnect();
     bus = null;
+    if (audio?.state === "running") audio.suspend().catch(() => {});
     pending = [];
     id("play-text").textContent = "Play";
     button.classList.remove("playing");
@@ -188,8 +197,12 @@
     try {
       const AudioEngine = window.AudioContext || window.webkitAudioContext;
       if (!AudioEngine) throw new Error("Unavailable");
-      if (!audio) {
+      if (!audio || audio.state === "closed") {
         audio = new AudioEngine();
+        audio.addEventListener("statechange", () => {
+          if (playing && bus && audio.state !== "running")
+            stop("Audio paused. Press Play to resume.");
+        });
         noise = audio.createBuffer(
           1,
           Math.ceil(audio.sampleRate * 0.2),
@@ -218,18 +231,35 @@
   button.addEventListener("click", () => (playing ? stop() : start()));
   tempo.addEventListener("input", () => {
     id("tempo-value").textContent = tempo.value + " BPM";
+    persistence.changed();
   });
   preset.addEventListener("change", () => {
     pattern = makePattern(preset.value);
     renderPattern();
+    persistence.changed();
   });
   id("clear").addEventListener("click", () => {
     pattern = makePattern("empty");
     preset.value = "custom";
     renderPattern();
+    persistence.changed();
   });
   document.addEventListener("visibilitychange", () => {
     if (document.hidden && playing) stop();
+  });
+  window.addEventListener("pagehide", () => {
+    if (playing) stop();
+  });
+  persistence = globalThis.setupLoopStorage({
+    current: () => ({ pattern, bpm: Number(tempo.value) }),
+    apply: (loop) => {
+      if (playing) stop();
+      pattern = loop.pattern;
+      tempo.value = loop.bpm;
+      id("tempo-value").textContent = loop.bpm + " BPM";
+      preset.value = globalThis.PulseGridModel.presetFor(pattern);
+      renderPattern();
+    },
   });
   renderPattern();
 })();

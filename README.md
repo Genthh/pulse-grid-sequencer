@@ -2,6 +2,8 @@
 
 Program a sixteen-step drum loop, adjust its tempo and play it with a browser synthesizer.
 
+A portable loop link stores all 64 pads and the tempo in its URL fragment. The app restores your latest local draft when you reopen it. Opening a shared link previews that loop, and editing it makes it your local draft. Audio starts only when you press Play.
+
 ## Run locally
 
 Use Node.js 22 or newer to run `node scripts/verify.mjs`. To launch a local preview, run `python3 -m http.server 8080 --bind 127.0.0.1 --directory public` and open http://127.0.0.1:8080.
