@@ -73,3 +73,52 @@ test("share and draft parsing reject malformed payloads and out-of-range tempos"
   invalid[1][3] = "on";
   assert.throws(() => encodeLoop(invalid, 100));
 });
+
+const { makeKit, renderBar, exportWav } = require("../public/audio.js");
+
+test("WAV writes a consistent mono PCM header and the exact one-bar frame count", () => {
+  for (const bpm of [50, 113, 190]) {
+    const data = Buffer.from(exportWav(makePattern("pocket"), bpm));
+    const frames = Math.round((44100 * 240) / bpm);
+    assert.equal(data.toString("ascii", 0, 4), "RIFF");
+    assert.equal(data.readUInt32LE(4), data.length - 8);
+    assert.equal(data.toString("ascii", 8, 16), "WAVEfmt ");
+    assert.equal(data.readUInt16LE(20), 1);
+    assert.equal(data.readUInt16LE(22), 1);
+    assert.equal(data.readUInt32LE(24), 44100);
+    assert.equal(data.readUInt32LE(28), 88200);
+    assert.equal(data.readUInt16LE(32), 2);
+    assert.equal(data.readUInt16LE(34), 16);
+    assert.equal(data.toString("ascii", 36, 40), "data");
+    assert.equal(data.readUInt32LE(40), frames * 2);
+    assert.equal(data.length, 44 + frames * 2);
+    assert.ok(data.subarray(44).some((byte) => byte !== 0));
+  }
+});
+
+test("renders the actual four drum sounds at their programmed sample offsets", () => {
+  const rate = 16000;
+  const bpm = 110;
+  const kit = makeKit(rate);
+  for (let track = 0; track < 4; track++) {
+    const pattern = toggle(makePattern("empty"), track, 4);
+    const rendered = renderBar(pattern, bpm, rate);
+    const start = Math.round((4 * rate * 60) / bpm / 4);
+    assert.ok(rendered.subarray(0, start).every((sample) => sample === 0));
+    assert.ok(
+      kit[track].every((sample, index) => rendered[start + index] === sample),
+    );
+    assert.ok(kit[track].some((sample) => Math.abs(sample) > 0.001));
+  }
+  const silent = Buffer.from(exportWav(makePattern("empty"), 113));
+  assert.ok(silent.subarray(44).every((byte) => byte === 0));
+  assert.throws(() => renderBar([], 120, rate));
+});
+
+test("last-step tails wrap into the start of a looping WAV", () => {
+  const lastKick = toggle(makePattern("empty"), 0, 15);
+  const rendered = renderBar(lastKick, 190, 16000);
+  assert.ok(
+    rendered.subarray(0, 200).some((sample) => Math.abs(sample) > 0.0001),
+  );
+});
