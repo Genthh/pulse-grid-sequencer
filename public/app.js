@@ -11,7 +11,7 @@
   const rows = [];
   let pattern = makePattern("pocket");
   let audio;
-  let noise;
+  let sounds;
   let bus;
   let timer;
   let frame;
@@ -107,42 +107,11 @@
   });
 
   function playVoice(track, time) {
-    const envelope = audio.createGain();
-    const noisy = track === 1 || track === 2;
-    const durations = [0.19, 0.14, 0.052, 0.065];
-    const levels = [0.58, 0.28, 0.15, 0.2];
-    const end = time + durations[track];
-    envelope.gain.setValueAtTime(0.001, time);
-    envelope.gain.exponentialRampToValueAtTime(levels[track], time + 0.003);
-    envelope.gain.exponentialRampToValueAtTime(0.001, end);
-    envelope.connect(bus);
-    const source = noisy
-      ? audio.createBufferSource()
-      : audio.createOscillator();
-    let filter;
-    if (noisy) {
-      source.buffer = noise;
-      filter = audio.createBiquadFilter();
-      filter.type = "highpass";
-      filter.frequency.value = track === 1 ? 1200 : 5700;
-      source.connect(filter);
-      filter.connect(envelope);
-    } else {
-      source.type = track === 0 ? "sine" : "triangle";
-      source.frequency.setValueAtTime(track === 0 ? 145 : 680, time);
-      source.frequency.exponentialRampToValueAtTime(
-        track === 0 ? 43 : 390,
-        end,
-      );
-      source.connect(envelope);
-    }
-    source.onended = () => {
-      source.disconnect();
-      filter?.disconnect();
-      envelope.disconnect();
-    };
+    const source = audio.createBufferSource();
+    source.buffer = sounds[track];
+    source.connect(bus);
+    source.onended = () => source.disconnect();
     source.start(time);
-    source.stop(end);
   }
 
   function schedule() {
@@ -203,19 +172,21 @@
           if (playing && bus && audio.state !== "running")
             stop("Audio paused. Press Play to resume.");
         });
-        noise = audio.createBuffer(
-          1,
-          Math.ceil(audio.sampleRate * 0.2),
-          audio.sampleRate,
+        sounds = globalThis.PulseAudioEngine.makeKit(audio.sampleRate).map(
+          (samples) => {
+            const buffer = audio.createBuffer(
+              1,
+              samples.length,
+              audio.sampleRate,
+            );
+            buffer.copyToChannel(samples, 0);
+            return buffer;
+          },
         );
-        const samples = noise.getChannelData(0);
-        for (let i = 0; i < samples.length; i++)
-          samples[i] = Math.random() * 2 - 1;
       }
       await audio.resume();
       if (token !== session) return;
       bus = audio.createGain();
-      bus.gain.value = 0.68;
       bus.connect(audio.destination);
       step = 0;
       nextTime = audio.currentTime + 0.025;
@@ -238,6 +209,27 @@
     renderPattern();
     persistence.changed();
   });
+  id("export-wav").addEventListener("click", () => {
+    const feedback = id("export-status");
+    try {
+      const bpm = Number(tempo.value);
+      const wav = globalThis.PulseAudioEngine.exportWav(pattern, bpm);
+      const file = new Blob([wav], { type: "audio/wav" });
+      const url = URL.createObjectURL(file);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "pulse-grid-" + bpm + "bpm.wav";
+      document.body.append(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      feedback.textContent = "Prepared a one-bar WAV at " + bpm + " BPM.";
+    } catch {
+      feedback.textContent =
+        "Could not prepare the audio file. Try downloading again.";
+    }
+  });
+
   id("clear").addEventListener("click", () => {
     pattern = makePattern("empty");
     preset.value = "custom";

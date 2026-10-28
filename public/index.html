@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="style.css" />
     <script src="model.js" defer></script>
     <script src="loops.js" defer></script>
+    <script src="audio.js" defer></script>
     <script src="app.js" defer></script>
   </head>
   <body>
@@ -74,8 +75,10 @@
           >
             Share loop
           </button>
+          <button type="button" id="export-wav">Download WAV</button>
           <button type="button" id="clear">Clear pattern</button>
         </footer>
+        <p id="export-status" role="status"></p>
         <div id="link-panel" hidden>
           <label for="share-url">Loop link</label>
           <div class="link-controls">

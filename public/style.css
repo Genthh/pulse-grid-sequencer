@@ -405,6 +405,7 @@ footer {
   gap: 10px;
 }
 #share-loop,
+#export-wav,
 #copy-loop {
   border: 1px solid #929387;
   color: var(--ink);
@@ -419,6 +420,7 @@ footer {
   color: #ffc297;
 }
 #share-loop:hover,
+#export-wav:hover,
 #copy-loop:hover {
   background: #464941;
 }
@@ -442,6 +444,7 @@ footer {
   color: var(--ink);
   padding: 6px 8px;
 }
+#export-status:not(:empty),
 #loop-notice {
   margin-top: 12px;
   color: var(--dim);
@@ -449,4 +452,8 @@ footer {
     0.82rem/1.4 "Helvetica Neue",
     Arial,
     sans-serif;
+}
+
+footer {
+  flex-wrap: wrap;
 }
